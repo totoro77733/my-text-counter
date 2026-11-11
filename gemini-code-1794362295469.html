@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">스마트 글자수 세기 | Smart Text Counter</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Noto Sans KR Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        /* Toast notification animation */
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(20px); }
+            15% { opacity: 1; transform: translateY(0); }
+            85% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(20px); }
+        }
+        .animate-toast {
+            animation: fadeInOut 2.5s forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
+
+    <!-- Header Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+                    <span class="font-bold text-lg" id="logoIcon">글</span>
+                </div>
+                <div>
+                    <h1 id="headerTitle" class="text-xl font-bold text-slate-900 tracking-tight">스마트 글자수 세기</h1>
+                    <p id="headerSubtitle" class="text-xs text-slate-500 hidden sm:block">실시간 텍스트 분석 및 원고지 분량 계산기</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <!-- Language Toggle Button -->
+                <button id="btnLangToggle" class="px-3 py-2 text-xs sm:text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center space-x-1.5">
+                    <i class="fa-solid fa-globe"></i>
+                    <span id="langToggleText">English</span>
+                </button>
+                <!-- Sample Button -->
+                <button id="btnSample" class="px-3.5 py-2 text-xs sm:text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors flex items-center space-x-1.5">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span id="btnSampleText">샘플 입력</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-grow">
+        
+        <!-- Top Summary Metric Display Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <!-- 공백 포함 글자수 -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between text-slate-500 mb-2">
+                    <span id="labelWithSpaces" class="text-xs font-semibold uppercase tracking-wider">공백 포함</span>
+                    <i class="fa-solid fa-text-width text-indigo-500"></i>
+                </div>
+                <div class="flex items-baseline space-x-1">
+                    <span id="statWithSpaces" class="text-3xl font-bold text-indigo-600">0</span>
+                    <span id="unitWithSpaces" class="text-xs text-slate-500 font-medium">자</span>
+                </div>
+            </div>
+
+            <!-- 공백 제외 글자수 -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between text-slate-500 mb-2">
+                    <span id="labelWithoutSpaces" class="text-xs font-semibold uppercase tracking-wider">공백 제외</span>
+                    <i class="fa-solid fa-align-left text-emerald-500"></i>
+                </div>
+                <div class="flex items-baseline space-x-1">
+                    <span id="statWithoutSpaces" class="text-3xl font-bold text-emerald-600">0</span>
+                    <span id="unitWithoutSpaces" class="text-xs text-slate-500 font-medium">자</span>
+                </div>
+            </div>
+
+            <!-- 단어 수 -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between text-slate-500 mb-2">
+                    <span id="labelWordCount" class="text-xs font-semibold uppercase tracking-wider">단어 수</span>
+                    <i class="fa-solid fa-quote-right text-amber-500"></i>
+                </div>
+                <div class="flex items-baseline space-x-1">
+                    <span id="statWordCount" class="text-3xl font-bold text-amber-600">0</span>
+                    <span id="unitWordCount" class="text-xs text-slate-500 font-medium">개</span>
+                </div>
+            </div>
+
+            <!-- 줄 수 -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between text-slate-500 mb-2">
+                    <span id="labelLineCount" class="text-xs font-semibold uppercase tracking-wider">줄 수</span>
+                    <i class="fa-solid fa-list-ol text-rose-500"></i>
+                </div>
+                <div class="flex items-baseline space-x-1">
+                    <span id="statLineCount" class="text-3xl font-bold text-rose-600">0</span>
+                    <span id="unitLineCount" class="text-xs text-slate-500 font-medium">줄</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Textarea and Detailed Analytics Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Left Side: Main Editor Box -->
+            <div class="lg:col-span-2 flex flex-col">
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm flex-grow flex flex-col overflow-hidden">
+                    <!-- Text Area Header Action Bar -->
+                    <div class="bg-slate-50/80 border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+                        <span id="editorTitle" class="text-xs font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-regular fa-pen-to-square"></i> 텍스트 입력
+                        </span>
+                        <div class="flex items-center space-x-2">
+                            <button id="btnClear" class="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors flex items-center gap-1">
+                                <i class="fa-regular fa-trash-can"></i>
+                                <span id="btnClearText">초기화</span>
+                            </button>
+                            <button id="btnCopy" class="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm transition-all flex items-center gap-1">
+                                <i class="fa-regular fa-copy"></i>
+                                <span id="btnCopyText">복사하기</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Main Textarea -->
+                    <div class="relative flex-grow p-4">
+                        <textarea id="textInput" placeholder="여기에 텍스트를 입력하거나 붙여넣으세요..." class="w-full h-80 sm:h-96 md:h-[420px] p-2 text-slate-700 placeholder-slate-400 border-0 resize-none focus:outline-none font-normal text-base leading-relaxed" spellcheck="false"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Secondary Calculations & Extra Stats -->
+            <div class="flex flex-col space-y-4">
+                
+                <!-- 원고지 분량 카드 -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <div class="w-9 h-9 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">
+                            <i class="fa-solid fa-note-sticky"></i>
+                        </div>
+                        <div>
+                            <h3 id="card1Title" class="text-sm font-bold text-slate-800">200자 원고지 분량</h3>
+                            <p id="card1Sub" class="text-xs text-slate-400">일반적인 원고지 환산 매수</p>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline justify-between mt-2 pt-2 border-t border-slate-100">
+                        <span id="card1Label" class="text-xs text-slate-500 font-medium">예상 분량</span>
+                        <div>
+                            <span id="statManuscript" class="text-2xl font-bold text-slate-800">0</span>
+                            <span id="card1Unit" class="text-xs text-slate-500 ml-1">매</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 예상 읽기 시간 카드 -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <div class="w-9 h-9 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-sm">
+                            <i class="fa-regular fa-clock"></i>
+                        </div>
+                        <div>
+                            <h3 id="card2Title" class="text-sm font-bold text-slate-800">예상 읽기 시간</h3>
+                            <p id="card2Sub" class="text-xs text-slate-400">분당 약 500자 기준</p>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline justify-between mt-2 pt-2 border-t border-slate-100">
+                        <span id="card2Label" class="text-xs text-slate-500 font-medium">소요 시간</span>
+                        <div>
+                            <span id="statReadingTime" class="text-2xl font-bold text-slate-800">0</span>
+                            <span id="card2Unit" class="text-xs text-slate-500 ml-1">분</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 사용법 안내 -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex-grow">
+                    <h3 id="guideTitle" class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-info text-indigo-500"></i>
+                        사용법 안내
+                    </h3>
+                    <ul id="guideList" class="text-xs text-slate-600 space-y-2.5 leading-relaxed">
+                        <li class="flex items-start gap-2">
+                            <span class="text-indigo-500 font-bold">•</span>
+                            <span><strong>공백 포함/제외:</strong> 띄어쓰기와 줄바꿈을 구분하여 계산합니다.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-indigo-500 font-bold">•</span>
+                            <span><strong>원고지:</strong> 200자 기준 원고지에 작성했을 때의 예상 장수입니다.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-indigo-500 font-bold">•</span>
+                            <span>자기소개서, 블로그 글, 서류 작성 시 필요한 분량을 실시간으로 체크하세요.</span>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-12 py-4 text-center text-xs text-slate-400">
+        <p id="footerText">© 2026 스마트 글자수 세기. All rights reserved.</p>
+    </footer>
+
+    <!-- Toast Notification Widget -->
+    <div id="toast" class="fixed bottom-6 right-6 hidden z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-2 text-sm">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toastMessage">클립보드에 복사되었습니다!</span>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Language Dictionary
+        const translations = {
+            ko: {
+                pageTitle: "스마트 글자수 세기 | Smart Text Counter",
+                logoIcon: "글",
+                headerTitle: "스마트 글자수 세기",
+                headerSubtitle: "실시간 텍스트 분석 및 원고지 분량 계산기",
+                langToggleText: "English",
+                btnSampleText: "샘플 입력",
+                labelWithSpaces: "공백 포함",
+                unitWithSpaces: "자",
+                labelWithoutSpaces: "공백 제외",
+                unitWithoutSpaces: "자",
+                labelWordCount: "단어 수",
+                unitWordCount: "개",
+                labelLineCount: "줄 수",
+                unitLineCount: "줄",
+                editorTitle: "<i class='fa-regular fa-pen-to-square'></i> 텍스트 입력",
+                btnClearText: "초기화",
+                btnCopyText: "복사하기",
+                placeholder: "여기에 텍스트를 입력하거나 붙여넣으세요...",
+                card1Title: "200자 원고지 분량",
+                card1Sub: "일반적인 원고지 환산 매수",
+                card1Label: "예상 분량",
+                card1Unit: "매",
+                card2Title: "예상 읽기 시간",
+                card2Sub: "분당 약 500자 기준",
+                card2Label: "소요 시간",
+                card2Unit: "분",
+                guideTitle: "<i class='fa-solid fa-circle-info text-indigo-500'></i> 사용법 안내",
+                guideItems: [
+                    "<strong>공백 포함/제외:</strong> 띄어쓰기와 줄바꿈을 구분하여 계산합니다.",
+                    "<strong>원고지:</strong> 200자 기준 원고지에 작성했을 때의 예상 장수입니다.",
+                    "자기소개서, 블로그 글, 서류 작성 시 필요한 분량을 실시간으로 체크하세요."
+                ],
+                footerText: "© 2026 스마트 글자수 세기. All rights reserved.",
+                toastCopy: "클립보드에 복사되었습니다!",
+                toastClear: "텍스트가 초기화되었습니다.",
+                toastSample: "샘플 텍스트가 입력되었습니다.",
+                toastNoText: "복사할 텍스트가 없습니다.",
+                sampleText: `오랜만에 통밀빵을 만들어보았다. 효모를 넣고 두 배나 부풀어 오른 반죽을 볼 때면 아직도 참 신기하다.
+
+통밀빵은 조금 부드러운 맛은 없지만 꽤 건강한 느낌이다.
+투박해도 내 손으로 직접 만들어 먹는 재미가 쏠쏠하다.
+
+오늘 아침은 갓 구운 통밀빵에 따뜻한 커피 한 잔으로 시작해본다.`
+            },
+            en: {
+                pageTitle: "Smart Text Counter | 스마트 글자수 세기",
+                logoIcon: "T",
+                headerTitle: "Smart Text Counter",
+                headerSubtitle: "Real-time text analysis and reading time calculator",
+                langToggleText: "한국어",
+                btnSampleText: "Load Sample",
+                labelWithSpaces: "With Spaces",
+                unitWithSpaces: "chars",
+                labelWithoutSpaces: "Without Spaces",
+                unitWithoutSpaces: "chars",
+                labelWordCount: "Words",
+                unitWordCount: "words",
+                labelLineCount: "Lines",
+                unitLineCount: "lines",
+                editorTitle: "<i class='fa-regular fa-pen-to-square'></i> Text Editor",
+                btnClearText: "Clear",
+                btnCopyText: "Copy",
+                placeholder: "Type or paste your text here...",
+                card1Title: "Page Estimation",
+                card1Sub: "Standard 250 words per page",
+                card1Label: "Est. Pages",
+                card1Unit: "pages",
+                card2Title: "Reading Time",
+                card2Sub: "Based on 200 words per min",
+                card2Label: "Est. Time",
+                card2Unit: "min",
+                guideTitle: "<i class='fa-solid fa-circle-info text-indigo-500'></i> Quick Guide",
+                guideItems: [
+                    "<strong>With/Without Spaces:</strong> Tracks total characters including or excluding white spaces.",
+                    "<strong>Reading Speed:</strong> Calculated using average adult reading speeds (~200 WPM).",
+                    "Perfect for essays, blog posts, emails, and social media captions."
+                ],
+                footerText: "© 2026 Smart Text Counter. All rights reserved.",
+                toastCopy: "Copied to clipboard!",
+                toastClear: "Text cleared.",
+                toastSample: "Sample text loaded.",
+                toastNoText: "No text to copy.",
+                sampleText: `I went on a picnic to a nearby mountain with my friends.😀
+
+Riding the cable car was a little bit scary. But the scenery below was amazing, and I had a short, relaxing time.🚠⛰️
+
+Autumn scenery captured with friends right in the middle of the season.🍁🍁🍁
+
+#Autumn #CableCar #Healing #MountainTrip #FallScenery`
+            }
+        };
+
+        let currentLang = 'ko'; // Default language
+
+        // DOM Elements
+        const textInput = document.getElementById('textInput');
+        const statWithSpaces = document.getElementById('statWithSpaces');
+        const statWithoutSpaces = document.getElementById('statWithoutSpaces');
+        const statWordCount = document.getElementById('statWordCount');
+        const statLineCount = document.getElementById('statLineCount');
+        const statManuscript = document.getElementById('statManuscript');
+        const statReadingTime = document.getElementById('statReadingTime');
+
+        const btnCopy = document.getElementById('btnCopy');
+        const btnClear = document.getElementById('btnClear');
+        const btnSample = document.getElementById('btnSample');
+        const btnLangToggle = document.getElementById('btnLangToggle');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+
+        // Update UI Language function
+        function setLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang];
+
+            document.getElementById('pageTitle').textContent = t.pageTitle;
+            document.getElementById('logoIcon').textContent = t.logoIcon;
+            document.getElementById('headerTitle').textContent = t.headerTitle;
+            document.getElementById('headerSubtitle').textContent = t.headerSubtitle;
+            document.getElementById('langToggleText').textContent = t.langToggleText;
+            document.getElementById('btnSampleText').textContent = t.btnSampleText;
+
+            document.getElementById('labelWithSpaces').textContent = t.labelWithSpaces;
+            document.getElementById('unitWithSpaces').textContent = t.unitWithSpaces;
+            document.getElementById('labelWithoutSpaces').textContent = t.labelWithoutSpaces;
+            document.getElementById('unitWithoutSpaces').textContent = t.unitWithoutSpaces;
+            document.getElementById('labelWordCount').textContent = t.labelWordCount;
+            document.getElementById('unitWordCount').textContent = t.unitWordCount;
+            document.getElementById('labelLineCount').textContent = t.labelLineCount;
+            document.getElementById('unitLineCount').textContent = t.unitLineCount;
+
+            document.getElementById('editorTitle').innerHTML = t.editorTitle;
+            document.getElementById('btnClearText').textContent = t.btnClearText;
+            document.getElementById('btnCopyText').textContent = t.btnCopyText;
+            textInput.placeholder = t.placeholder;
+
+            document.getElementById('card1Title').textContent = t.card1Title;
+            document.getElementById('card1Sub').textContent = t.card1Sub;
+            document.getElementById('card1Label').textContent = t.card1Label;
+            document.getElementById('card1Unit').textContent = t.card1Unit;
+
+            document.getElementById('card2Title').textContent = t.card2Title;
+            document.getElementById('card2Sub').textContent = t.card2Sub;
+            document.getElementById('card2Label').textContent = t.card2Label;
+            document.getElementById('card2Unit').textContent = t.card2Unit;
+
+            document.getElementById('guideTitle').innerHTML = t.guideTitle;
+            const guideList = document.getElementById('guideList');
+            guideList.innerHTML = t.guideItems.map(item => `
+                <li class="flex items-start gap-2">
+                    <span class="text-indigo-500 font-bold">•</span>
+                    <span>${item}</span>
+                </li>
+            `).join('');
+
+            document.getElementById('footerText').textContent = t.footerText;
+            calculateStats();
+        }
+
+        // Real-time Calculation Function
+        function calculateStats() {
+            const text = textInput.value;
+            const withSpaces = text.length;
+            const withoutSpaces = text.replace(/\s/g, '').length;
+            const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+            const lines = text === '' ? 0 : text.split('\n').length;
+
+            if (currentLang === 'ko') {
+                const manuscript = Math.ceil(withSpaces / 200);
+                const readingMinutes = (withSpaces / 500).toFixed(1);
+                statManuscript.textContent = manuscript.toLocaleString();
+                statReadingTime.textContent = readingMinutes;
+            } else {
+                const pages = Math.ceil(words / 250);
+                const readingMinutes = (words / 200).toFixed(1);
+                statManuscript.textContent = pages.toLocaleString();
+                statReadingTime.textContent = readingMinutes;
+            }
+
+            statWithSpaces.textContent = withSpaces.toLocaleString();
+            statWithoutSpaces.textContent = withoutSpaces.toLocaleString();
+            statWordCount.textContent = words.toLocaleString();
+            statLineCount.textContent = lines.toLocaleString();
+        }
+
+        function showToast(msg) {
+            toastMessage.textContent = msg;
+            toast.classList.remove('hidden');
+            toast.classList.remove('animate-toast');
+            void toast.offsetWidth;
+            toast.classList.add('animate-toast');
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 2500);
+        }
+
+        function copyToClipboard() {
+            const t = translations[currentLang];
+            if (!textInput.value) {
+                showToast(t.toastNoText);
+                return;
+            }
+
+            textInput.select();
+            textInput.setSelectionRange(0, 99999);
+
+            try {
+                document.execCommand('copy');
+                showToast(t.toastCopy);
+            } catch (err) {
+                showToast('Failed to copy.');
+            }
+        }
+
+        // Event Listeners
+        textInput.addEventListener('input', calculateStats);
+
+        btnClear.addEventListener('click', () => {
+            const t = translations[currentLang];
+            textInput.value = '';
+            calculateStats();
+            textInput.focus();
+            showToast(t.toastClear);
+        });
+
+        btnSample.addEventListener('click', () => {
+            const t = translations[currentLang];
+            textInput.value = t.sampleText;
+            calculateStats();
+            showToast(t.toastSample);
+        });
+
+        btnCopy.addEventListener('click', copyToClipboard);
+
+        // Language Toggle Event
+        btnLangToggle.addEventListener('click', () => {
+            const nextLang = currentLang === 'ko' ? 'en' : 'ko';
+            setLanguage(nextLang);
+        });
+
+        // Initial Load
+        setLanguage('ko');
+    </script>
+</body>
+</html>
